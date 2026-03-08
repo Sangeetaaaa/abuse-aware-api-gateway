@@ -5,7 +5,21 @@ import (
 	"net/http"
 
 	"github.com/gin-gonic/gin"
+	"golang.org/x/time/rate"
 )
+
+func RateLimitMiddleware(limit rate.Limit, burst int) gin.HandlerFunc {
+	limiter := rate.NewLimiter(limit, burst)
+
+	return func(ctx *gin.Context) {
+		if !limiter.Allow() {
+			ctx.JSON(429, gin.H{"message": "Too many requests"})
+			ctx.Abort()
+			return
+		}
+		ctx.Next()
+	}
+}
 
 func main() {
 
@@ -19,22 +33,23 @@ func main() {
 		{Title: "Walk the dog", Completed: true},
 	}
 
-	r := gin.Default()
+	router := gin.Default()
+	router.Use(RateLimitMiddleware(1, 5)) // Limit to 1 request per second with a burst of 5
 
 	// Serve the frontend
-	r.StaticFile("/", "./index.html")
+	router.StaticFile("/", "./index.html")
 
 	// API routes
-	r.GET("/todos", func(ctx *gin.Context) {
+	router.GET("/todos", func(ctx *gin.Context) {
 		ctx.JSON(http.StatusOK, todoList)
 	})
 
 	// Keep original route working too
-	r.GET("/api", func(ctx *gin.Context) {
+	router.GET("/api", func(ctx *gin.Context) {
 		ctx.JSON(http.StatusOK, todoList)
 	})
 
-	r.PUT("/add", func(ctx *gin.Context) {
+	router.PUT("/add", func(ctx *gin.Context) {
 		var body Todo
 		if err := ctx.ShouldBindJSON(&body); err != nil {
 			ctx.JSON(http.StatusNotAcceptable, gin.H{"message": err})
@@ -44,7 +59,7 @@ func main() {
 		ctx.JSON(http.StatusOK, gin.H{"message": "Todo added successfully", "todo": todoList})
 	})
 
-	if err := r.Run(":8080"); err != nil {
+	if err := router.Run(":8080"); err != nil {
 		fmt.Printf("Error: %s\n", err)
 	}
 }
