@@ -3,15 +3,34 @@ package main
 import (
 	"fmt"
 	"net/http"
+	"sync"
 
 	"github.com/gin-gonic/gin"
 	"golang.org/x/time/rate"
 )
 
+var visitors = make(map[string]*rate.Limiter)
+var mu sync.Mutex
+
+func getLimiter(ip string) *rate.Limiter {
+	mu.Lock()
+	defer mu.Unlock()
+
+	limiter, exits := visitors[ip]
+	if !exits {
+		limiter = rate.NewLimiter(1, 5)
+	}
+
+	return limiter
+}
+
 func RateLimitMiddleware(limit rate.Limit, burst int) gin.HandlerFunc {
-	limiter := rate.NewLimiter(limit, burst)
 
 	return func(ctx *gin.Context) {
+
+		ip := ctx.ClientIP()
+		limiter := getLimiter(ip)
+
 		if !limiter.Allow() {
 			ctx.JSON(429, gin.H{"message": "Too many requests"})
 			ctx.Abort()
