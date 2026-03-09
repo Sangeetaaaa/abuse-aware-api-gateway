@@ -4,24 +4,34 @@ import (
 	"fmt"
 	"net/http"
 	"sync"
+	"time"
 
 	"github.com/gin-gonic/gin"
 	"golang.org/x/time/rate"
 )
 
-var visitors = make(map[string]*rate.Limiter)
+type Visitor struct {
+	limiter    *rate.Limiter
+	expiryTime time.Time
+}
+
+var visitors = make(map[string]*Visitor)
 var mu sync.Mutex
 
 func getLimiter(ip string) *rate.Limiter {
 	mu.Lock()
 	defer mu.Unlock()
 
-	limiter, exits := visitors[ip]
+	visitorStruct, exits := visitors[ip]
 	if !exits {
-		limiter = rate.NewLimiter(1, 5)
+		visitorStruct = &Visitor{
+			limiter:    rate.NewLimiter(1, 5),
+			expiryTime: time.Now().Add(5 * time.Minute), // Set expiry time to 5 minutes from now
+		}
+		visitors[ip] = visitorStruct
 	}
 
-	return limiter
+	return visitorStruct.limiter
 }
 
 func RateLimitMiddleware(limit rate.Limit, burst int) gin.HandlerFunc {
@@ -40,7 +50,35 @@ func RateLimitMiddleware(limit rate.Limit, burst int) gin.HandlerFunc {
 	}
 }
 
+// loop through visitors map
+//     if now - lastSeen > 3 minutes
+//         delete visitor
+
+func cleanupVisitors() {
+	fmt.Println("Cleaning up expired visitors list")
+	ticker := time.NewTicker(1 * time.Minute)
+
+	go func() {
+		for {
+			<-ticker.C
+			mu.Lock()
+			for ip, visitor := range visitors {
+				if time.Now().After(visitor.expiryTime) {
+					fmt.Println("Deleting expired visitor:", ip)
+					delete(visitors, ip)
+				}
+			}
+			mu.Unlock()
+		}
+	}()
+}
+
+// TTL-based eviction using a time-ordered structure for expiring visitors list
+// Storing a map ordered by lowest time to highest time, - loop through current time > exipry time and delete all those entries
+
 func main() {
+
+	cleanupVisitors()
 
 	type Todo struct {
 		Title     string `json:"title" bson:"title"`
