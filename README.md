@@ -1,8 +1,13 @@
-☑ IP based Rate Limiting (using in-memory storage) <br>
-☐ IP reputation <br>
-☐ Auto block IP (for certain time period) <br>
-☐ Path-Based Rate Limiting <br>
-☐ Bot Detection <br>
-☐ Request Pattern Detection <br>
-☐ Geo Blocking by using MaxMind GeoIP database <br>
-☐ Request Fingerprinting <br>
+## 🚀 Features
+
+### ✅ Implemented
+- ☑ **IP-Based Rate Limiting** (using in-memory storage)
+
+### ⏳ Planned
+- ☐ **IP Reputation System**
+- ☐ **Automatic IP Blocking** (temporary ban for abusive clients)
+- ☐ **Path-Based Rate Limiting**
+- ☐ **Bot Detection**
+- ☐ **Request Pattern Detection**
+- ☐ **Geo Blocking** (using MaxMind GeoIP database)
+- ☐ **Request Fingerprinting**
