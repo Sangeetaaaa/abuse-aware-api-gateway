@@ -1,6 +1,6 @@
 ☑ IP based Rate Limiting (using in-memory storage)
 ☐ IP reputation
-☐ Auto block IP (for certain time period)
+☐ Auto block IP (for certain time period) <br>
 ☐ Path-Based Rate Limiting
 ☐ Bot Detection 
 ☐ Request Pattern Detection
