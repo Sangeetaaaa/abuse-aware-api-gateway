@@ -11,27 +11,33 @@ import (
 )
 
 type Visitor struct {
-	limiter    *rate.Limiter
-	expiryTime time.Time
+	limiter           *rate.Limiter
+	lastSeen          time.Time
+	reputationScore   int
+	isBlocked         bool
+	blocketUntil      time.Time
+	lastRateLimitTime time.Time
 }
 
 var visitors = make(map[string]*Visitor)
 var mu sync.Mutex
 
-func getLimiter(ip string) *rate.Limiter {
+func getVisitor(ip string) *Visitor {
 	mu.Lock()
 	defer mu.Unlock()
 
 	visitorStruct, exits := visitors[ip]
 	if !exits {
 		visitorStruct = &Visitor{
-			limiter:    rate.NewLimiter(1, 5),
-			expiryTime: time.Now().Add(5 * time.Minute), // Set expiry time to 5 minutes from now
+			limiter:         rate.NewLimiter(1, 5),
+			reputationScore: 0, // Initialize IP score to 0
 		}
 		visitors[ip] = visitorStruct
 	}
 
-	return visitorStruct.limiter
+	visitorStruct.lastSeen = time.Now()
+
+	return visitorStruct
 }
 
 func RateLimitMiddleware(limit rate.Limit, burst int) gin.HandlerFunc {
@@ -39,9 +45,22 @@ func RateLimitMiddleware(limit rate.Limit, burst int) gin.HandlerFunc {
 	return func(ctx *gin.Context) {
 
 		ip := ctx.ClientIP()
-		limiter := getLimiter(ip)
+		visitor := getVisitor(ip)
 
-		if !limiter.Allow() {
+		if visitor.isBlocked {
+			ctx.JSON(403, gin.H{"message": "Forbidden: Your IP has been blocked due to suspicious activity"})
+			ctx.Abort()
+			return
+		}
+
+		if !visitor.limiter.Allow() {
+			visitor.reputationScore++
+			if visitor.reputationScore == 10 {
+				fmt.Printf("Blocking IP %s due to suspicious activity\n", ip)
+				visitor.isBlocked = true
+				visitor.blocketUntil = time.Now().Add(1 * time.Minute)
+			}
+			visitor.lastRateLimitTime = time.Now()
 			ctx.JSON(429, gin.H{"message": "Too many requests"})
 			ctx.Abort()
 			return
@@ -55,17 +74,31 @@ func RateLimitMiddleware(limit rate.Limit, burst int) gin.HandlerFunc {
 //         delete visitor
 
 func cleanupVisitors() {
-	fmt.Println("Cleaning up expired visitors list")
 	ticker := time.NewTicker(1 * time.Minute)
 
 	go func() {
 		for {
 			<-ticker.C
 			mu.Lock()
+			fmt.Println("Cleaning up expired visitors list")
 			for ip, visitor := range visitors {
-				if time.Now().After(visitor.expiryTime) {
-					fmt.Println("Deleting expired visitor:", ip)
-					delete(visitors, ip)
+				// if time.Now().After(visitor.lastSeen.Add(3 * time.Minute)) {
+				// 	fmt.Println("Deleting expired visitor:", ip)
+				// 	delete(visitors, ip)
+				// }
+
+				if visitor.isBlocked {
+					if time.Now().After(visitor.blocketUntil) {
+						visitor.isBlocked = false
+						visitor.reputationScore--
+					}
+				} else {
+					if time.Now().After(visitor.lastRateLimitTime.Add(10 * time.Minute)) {
+						fmt.Printf("Resetting reputation score for IP %s\n", ip)
+						if visitor.reputationScore > 0 {
+							visitor.reputationScore--
+						}
+					}
 				}
 			}
 			mu.Unlock()
@@ -73,8 +106,7 @@ func cleanupVisitors() {
 	}()
 }
 
-// TTL-based eviction using a time-ordered structure for expiring visitors list
-// Storing a map ordered by lowest time to highest time, - loop through current time > exipry time and delete all those entries
+// IP Reputation Service Integration
 
 func main() {
 
@@ -85,10 +117,7 @@ func main() {
 		Completed bool   `json:"completed" bson:"completed"`
 	}
 
-	todoList := []Todo{
-		{Title: "Buy groceries", Completed: false},
-		{Title: "Walk the dog", Completed: true},
-	}
+	todoList := []Todo{}
 
 	router := gin.Default()
 	router.Use(RateLimitMiddleware(1, 5)) // Limit to 1 request per second with a burst of 5
@@ -116,7 +145,7 @@ func main() {
 		ctx.JSON(http.StatusOK, gin.H{"message": "Todo added successfully", "todo": todoList})
 	})
 
-	if err := router.Run(":8080"); err != nil {
+	if err := router.Run(":8000"); err != nil {
 		fmt.Printf("Error: %s\n", err)
 	}
 }
