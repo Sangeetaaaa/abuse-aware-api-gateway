@@ -1,635 +1,299 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>TODO</title>
-  <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Mono:wght@300;400;500&display=swap" rel="stylesheet"/>
-  <style>
-    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Instagram Style Thoughts</title>
+<link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&family=Lobster&display=swap" rel="stylesheet">
 
-    :root {
-      --bg: #0c0c0b;
-      --surface: #141413;
-      --border: #252523;
-      --border-bright: #3a3a36;
-      --text: #e8e6df;
-      --text-muted: #6b6960;
-      --text-dim: #3d3c38;
-      --accent: #d4a853;
-      --accent-dim: #8a6b2e;
-      --done: #4a7c59;
-      --done-bg: #1a2e21;
-      --danger: #8b3a3a;
-    }
+<style>
+:root {
+  --bg: #fafafa;
+  --white: #ffffff;
+  --border: #dbdbdb;
+  --text-main: #262626;
+  --text-muted: #8e8e8e;
+  --link: #0095f6;
+  --insta-grad: linear-gradient(45deg, #f09433 0%, #e6683c 25%, #dc2743 50%, #cc2366 75%, #bc1888 100%);
+  --error: #ed4956;
+}
 
-    html { font-size: 16px; }
+body {
+  background: var(--bg);
+  color: var(--text-main);
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  margin: 0;
+  padding-top: 60px;
+}
 
-    body {
-      background: var(--bg);
-      color: var(--text);
-      font-family: 'DM Mono', monospace;
-      min-height: 100vh;
-      overflow-x: hidden;
-    }
+/* ── Header ── */
+header {
+  background: var(--white);
+  border-bottom: 1px solid var(--border);
+  height: 60px;
+  position: fixed;
+  top: 0;
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 100;
+}
 
-    /* Grain overlay */
-    body::before {
-      content: '';
-      position: fixed;
-      inset: 0;
-      background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.04'/%3E%3C/svg%3E");
-      pointer-events: none;
-      z-index: 999;
-      opacity: 0.4;
-    }
+header h1 {
+  font-family: 'Lobster', cursive;
+  font-size: 24px;
+  font-weight: 400;
+  margin: 0;
+}
 
-    /* Layout */
-    .container {
-      max-width: 680px;
-      margin: 0 auto;
-      padding: 0 24px;
-    }
+.container {
+  max-width: 470px;
+  margin: 0 auto;
+  padding: 20px 0;
+}
 
-    /* Header */
-    header {
-      padding: 64px 0 40px;
-      border-bottom: 1px solid var(--border);
-    }
+/* ── Stories Bar ── */
+.stories-bar {
+  background: var(--white);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 16px;
+  margin-bottom: 12px;
+  display: flex;
+  gap: 15px;
+  overflow-x: auto;
+}
 
-    .header-inner {
-      display: flex;
-      align-items: flex-end;
-      justify-content: space-between;
-      gap: 16px;
-    }
+.story-circle {
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+  background: var(--insta-grad);
+  padding: 2px;
+  flex-shrink: 0;
+}
 
-    .brand {
-      display: flex;
-      flex-direction: column;
-      gap: 6px;
-    }
+.story-circle img {
+  width: 100%;
+  height: 100%;
+  border-radius: 50%;
+  border: 2px solid white;
+  background: #eee;
+  object-fit: cover;
+}
 
-    .brand-label {
-      font-family: 'DM Mono', monospace;
-      font-size: 10px;
-      font-weight: 500;
-      letter-spacing: 0.2em;
-      text-transform: uppercase;
-      color: var(--accent);
-    }
+/* ── Create Post ── */
+.create-post {
+  background: var(--white);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 16px;
+  margin-bottom: 24px;
+}
 
-    h1 {
-      font-family: 'DM Serif Display', serif;
-      font-size: clamp(48px, 8vw, 72px);
-      font-weight: 400;
-      line-height: 0.9;
-      color: var(--text);
-      letter-spacing: -0.02em;
-    }
+.input-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
 
-    h1 em {
-      font-style: italic;
-      color: var(--accent);
-    }
+.avatar-small {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: #eee;
+}
 
-    .stats {
-      text-align: right;
-      font-size: 11px;
-      color: var(--text-muted);
-      line-height: 1.8;
-    }
+.input-field {
+  border: none;
+  outline: none;
+  font-size: 14px;
+  flex: 1;
+}
 
-    .stats strong {
-      color: var(--text);
-      font-weight: 500;
-    }
+/* ── Post Cards ── */
+.post-card {
+  background: var(--white);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  margin-bottom: 12px;
+  animation: fadeIn 0.4s ease;
+}
 
-    /* Add form */
-    .add-section {
-      padding: 32px 0;
-      border-bottom: 1px solid var(--border);
-    }
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
 
-    .input-row {
-      display: flex;
-      gap: 0;
-      position: relative;
-    }
+.post-header {
+  padding: 12px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
 
-    .input-wrap {
-      flex: 1;
-      position: relative;
-    }
+.username {
+  font-weight: 600;
+  font-size: 14px;
+}
 
-    .input-wrap::before {
-      content: '›';
-      position: absolute;
-      left: 16px;
-      top: 50%;
-      transform: translateY(-50%);
-      color: var(--accent);
-      font-size: 20px;
-      pointer-events: none;
-    }
+.post-body {
+  padding: 0 12px 12px;
+  font-size: 14px;
+  line-height: 1.5;
+}
 
-    input[type="text"] {
-      width: 100%;
-      background: var(--surface);
-      border: 1px solid var(--border);
-      border-right: none;
-      color: var(--text);
-      font-family: 'DM Mono', monospace;
-      font-size: 14px;
-      padding: 14px 16px 14px 38px;
-      outline: none;
-      transition: border-color 0.2s, background 0.2s;
-      border-radius: 4px 0 0 4px;
-    }
+.post-actions {
+  padding: 8px 12px;
+  display: flex;
+  gap: 16px;
+}
 
-    input[type="text"]:focus {
-      background: #1a1a18;
-      border-color: var(--accent-dim);
-    }
+.action-icon {
+  cursor: pointer;
+  font-size: 22px;
+}
 
-    input[type="text"]::placeholder {
-      color: var(--text-dim);
-    }
+/* ── Toast ── */
+.toast {
+  position: fixed;
+  bottom: 20px;
+  left: 50%;
+  transform: translateX(-50%) translateY(100px);
+  background: #333;
+  color: white;
+  padding: 12px 24px;
+  border-radius: 4px;
+  font-size: 14px;
+  transition: transform 0.3s ease;
+  z-index: 1000;
+}
 
-    .add-btn {
-      background: var(--accent);
-      color: var(--bg);
-      border: 1px solid var(--accent);
-      font-family: 'DM Mono', monospace;
-      font-size: 12px;
-      font-weight: 500;
-      letter-spacing: 0.1em;
-      text-transform: uppercase;
-      padding: 14px 24px;
-      cursor: pointer;
-      transition: all 0.2s;
-      border-radius: 0 4px 4px 0;
-      white-space: nowrap;
-    }
+.toast.show { transform: translateX(-50%) translateY(0); }
+.toast.error { background: var(--error); }
 
-    .add-btn:hover {
-      background: #e8bc6a;
-    }
-
-    .add-btn:active {
-      transform: scale(0.98);
-    }
-
-    .add-btn.loading {
-      opacity: 0.6;
-      cursor: not-allowed;
-    }
-
-    /* Toast */
-    .toast {
-      position: fixed;
-      bottom: 32px;
-      right: 32px;
-      background: var(--surface);
-      border: 1px solid var(--border-bright);
-      color: var(--text);
-      font-family: 'DM Mono', monospace;
-      font-size: 12px;
-      padding: 12px 18px;
-      border-radius: 4px;
-      transform: translateY(80px);
-      opacity: 0;
-      transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
-      z-index: 100;
-    }
-
-    .toast.show {
-      transform: translateY(0);
-      opacity: 1;
-    }
-
-    .toast.error { border-color: var(--danger); color: #e87a7a; }
-    .toast.success { border-color: var(--done); color: #7abf91; }
-
-    /* Todo list */
-    .list-section {
-      padding: 32px 0;
-    }
-
-    .list-header {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      margin-bottom: 20px;
-    }
-
-    .list-title {
-      font-size: 10px;
-      letter-spacing: 0.2em;
-      text-transform: uppercase;
-      color: var(--text-muted);
-    }
-
-    .filter-tabs {
-      display: flex;
-      gap: 2px;
-    }
-
-    .filter-tab {
-      background: none;
-      border: 1px solid transparent;
-      color: var(--text-muted);
-      font-family: 'DM Mono', monospace;
-      font-size: 10px;
-      letter-spacing: 0.1em;
-      text-transform: uppercase;
-      padding: 4px 10px;
-      cursor: pointer;
-      transition: all 0.15s;
-      border-radius: 2px;
-    }
-
-    .filter-tab:hover { color: var(--text); }
-    .filter-tab.active {
-      border-color: var(--border-bright);
-      color: var(--text);
-      background: var(--surface);
-    }
-
-    /* Todo items */
-    .todo-list {
-      display: flex;
-      flex-direction: column;
-      gap: 2px;
-    }
-
-    .todo-item {
-      display: flex;
-      align-items: center;
-      gap: 16px;
-      padding: 16px 20px;
-      background: var(--surface);
-      border: 1px solid var(--border);
-      border-radius: 4px;
-      cursor: pointer;
-      transition: all 0.2s;
-      animation: slideIn 0.3s cubic-bezier(0.34, 1.2, 0.64, 1) forwards;
-      position: relative;
-      overflow: hidden;
-    }
-
-    @keyframes slideIn {
-      from { opacity: 0; transform: translateY(-8px); }
-      to   { opacity: 1; transform: translateY(0); }
-    }
-
-    .todo-item::before {
-      content: '';
-      position: absolute;
-      left: 0; top: 0; bottom: 0;
-      width: 2px;
-      background: transparent;
-      transition: background 0.2s;
-    }
-
-    .todo-item:hover {
-      border-color: var(--border-bright);
-      background: #181816;
-    }
-
-    .todo-item:hover::before { background: var(--accent-dim); }
-
-    .todo-item.completed {
-      background: var(--done-bg);
-      border-color: #253329;
-    }
-
-    .todo-item.completed::before { background: var(--done); }
-
-    .todo-item.completed .todo-text {
-      text-decoration: line-through;
-      color: var(--text-muted);
-    }
-
-    /* Checkbox */
-    .check {
-      width: 20px;
-      height: 20px;
-      border: 1px solid var(--border-bright);
-      border-radius: 2px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      flex-shrink: 0;
-      transition: all 0.2s;
-      background: transparent;
-    }
-
-    .todo-item.completed .check {
-      background: var(--done);
-      border-color: var(--done);
-    }
-
-    .check-icon {
-      width: 10px;
-      height: 10px;
-      opacity: 0;
-      transition: opacity 0.2s;
-    }
-
-    .todo-item.completed .check-icon { opacity: 1; }
-
-    .todo-text {
-      flex: 1;
-      font-size: 14px;
-      font-weight: 300;
-      color: var(--text);
-      transition: color 0.2s;
-    }
-
-    .todo-index {
-      font-size: 10px;
-      color: var(--text-dim);
-      font-weight: 400;
-      flex-shrink: 0;
-    }
-
-    /* Empty state */
-    .empty {
-      padding: 60px 0;
-      text-align: center;
-      color: var(--text-dim);
-    }
-
-    .empty-icon {
-      font-family: 'DM Serif Display', serif;
-      font-size: 48px;
-      font-style: italic;
-      color: var(--border-bright);
-      margin-bottom: 12px;
-    }
-
-    .empty p {
-      font-size: 12px;
-      letter-spacing: 0.05em;
-    }
-
-    /* Loading skeleton */
-    .skeleton {
-      height: 54px;
-      background: var(--surface);
-      border: 1px solid var(--border);
-      border-radius: 4px;
-      animation: pulse 1.5s ease-in-out infinite;
-    }
-
-    @keyframes pulse {
-      0%, 100% { opacity: 0.4; }
-      50% { opacity: 0.8; }
-    }
-
-    /* Footer */
-    footer {
-      padding: 32px 0 48px;
-      border-top: 1px solid var(--border);
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      gap: 16px;
-    }
-
-    .footer-text {
-      font-size: 10px;
-      color: var(--text-dim);
-      letter-spacing: 0.1em;
-    }
-
-    .api-badge {
-      font-size: 10px;
-      color: var(--text-dim);
-      border: 1px solid var(--border);
-      padding: 3px 8px;
-      border-radius: 2px;
-      letter-spacing: 0.1em;
-    }
-
-    .api-badge .dot {
-      display: inline-block;
-      width: 5px;
-      height: 5px;
-      border-radius: 50%;
-      background: var(--done);
-      margin-right: 6px;
-      animation: blink 2s ease-in-out infinite;
-    }
-
-    @keyframes blink {
-      0%, 100% { opacity: 1; }
-      50% { opacity: 0.3; }
-    }
-
-    /* Completed toggle section */
-    .completed-toggle {
-      display: flex;
-      align-items: center;
-      gap: 10px;
-      padding: 20px 0 0;
-      cursor: pointer;
-      color: var(--text-muted);
-      font-size: 10px;
-      letter-spacing: 0.15em;
-      text-transform: uppercase;
-      border-top: 1px solid var(--border);
-      margin-top: 8px;
-      user-select: none;
-    }
-
-    .completed-toggle:hover { color: var(--text); }
-
-    .chevron {
-      transition: transform 0.2s;
-    }
-
-    .chevron.open { transform: rotate(90deg); }
-  </style>
+.stories-bar::-webkit-scrollbar { display: none; }
+</style>
 </head>
 <body>
 
+<header>
+  <h1>Thoughts</h1>
+</header>
+
 <div class="container">
-  <header>
-    <div class="header-inner">
-      <div class="brand">
-        <span class="brand-label">Task Manager</span>
-        <h1>To<em>do</em></h1>
-      </div>
-      <div class="stats" id="stats">
-        <strong id="pending-count">—</strong> pending<br>
-        <strong id="done-count">—</strong> done
-      </div>
-    </div>
-  </header>
+  <div class="stories-bar">
+    <div class="story-circle"><img src="https://api.dicebear.com/7.x/notionists/svg?seed=SRK"></div>
+    <div class="story-circle"><img src="https://api.dicebear.com/7.x/notionists/svg?seed=Ranbir"></div>
+    <div class="story-circle"><img src="https://api.dicebear.com/7.x/notionists/svg?seed=Alia"></div>
+    <div class="story-circle"><img src="https://api.dicebear.com/7.x/notionists/svg?seed=Varun"></div>
+    <div class="story-circle"><img src="https://api.dicebear.com/7.x/notionists/svg?seed=Kiara"></div>
+  </div>
 
-  <section class="add-section">
+  <div class="create-post">
     <div class="input-row">
-      <div class="input-wrap">
-        <input
-          type="text"
-          id="new-todo"
-          placeholder="What needs to be done?"
-          maxlength="120"
-          autocomplete="off"
-        />
-      </div>
-      <button class="add-btn" id="add-btn" onclick="addTodo()">Add</button>
+      <img src="https://api.dicebear.com/7.x/notionists/svg?seed=Sangeeta" class="avatar-small">
+      <input type="text" id="thought-input" class="input-field" placeholder="What's on your mind? (Enter to post)" autocomplete="off">
     </div>
-  </section>
+  </div>
 
-  <section class="list-section">
-    <div class="list-header">
-      <span class="list-title">Tasks</span>
-      <div class="filter-tabs">
-        <button class="filter-tab active" onclick="setFilter('all', this)">All</button>
-        <button class="filter-tab" onclick="setFilter('active', this)">Active</button>
-        <button class="filter-tab" onclick="setFilter('done', this)">Done</button>
-      </div>
-    </div>
-
-    <div class="todo-list" id="todo-list">
-      <div class="skeleton"></div>
-      <div class="skeleton" style="opacity:0.6;margin-top:2px"></div>
-      <div class="skeleton" style="opacity:0.3;margin-top:2px"></div>
-    </div>
-  </section>
-
-  <footer>
-    <span class="footer-text">Go + Gin · localhost:8080</span>
-    <span class="api-badge"><span class="dot"></span>Connected</span>
-  </footer>
+  <div id="post-list"></div>
 </div>
 
-<div class="toast" id="toast"></div>
+<div id="toast" class="toast"></div>
 
 <script>
-  let todos = [];
-  let filter = 'all';
+let thoughts = [];
+const inputField = document.getElementById("thought-input");
 
-  /* ── API ── */
-  async function fetchTodos() {
-    try {
-      const res = await fetch('/');
-      if (!res.ok) throw new Error();
-      todos = await res.json();
-      render();
-    } catch {
-      showToast('Could not reach server', 'error');
-      document.getElementById('todo-list').innerHTML =
-        '<div class="empty"><div class="empty-icon">!</div><p>Server unreachable · make sure Gin is running on :8080</p></div>';
-    }
-  }
+function showToast(msg, isError = false) {
+  const t = document.getElementById("toast");
+  t.textContent = msg;
+  t.className = isError ? "toast error show" : "toast show";
+  setTimeout(() => t.classList.remove("show"), 10000);
+}
 
-  async function addTodo() {
-    const input = document.getElementById('new-todo');
-    const title = input.value.trim();
-    if (!title) { input.focus(); return; }
-
-    const btn = document.getElementById('add-btn');
-    btn.classList.add('loading');
-    btn.textContent = '...';
-
-    try {
-      const res = await fetch('/add', {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ title, completed: false })
-      });
-      if (!res.ok) throw new Error();
-      const data = await res.json();
-      todos = data.todo;
-      input.value = '';
-      render();
-      showToast('Task added', 'success');
-    } catch {
-      showToast('Failed to add task', 'error');
-    } finally {
-      btn.classList.remove('loading');
-      btn.textContent = 'Add';
-    }
-  }
-
-  /* ── Local toggle (no backend endpoint yet) ── */
-  function toggleTodo(index) {
-    todos[index].completed = !todos[index].completed;
+// Fetch from Go Backend
+async function fetchThoughts() {
+  try {
+    const res = await fetch("/todos");
+    if (res.status === 429) return showToast("Slow down! Too many requests.", true);
+    if (res.status === 403) return showToast("IP Blocked for 1 minute!", true);
+    if (!res.ok) throw new Error();
+    
+    thoughts = await res.json();
     render();
+  } catch (e) {
+    showToast("Server unreachable", true);
   }
+}
 
-  /* ── Filter ── */
-  function setFilter(f, el) {
-    filter = f;
-    document.querySelectorAll('.filter-tab').forEach(t => t.classList.remove('active'));
-    el.classList.add('active');
+// Add via Go Backend
+async function addThought() {
+  const text = inputField.value.trim();
+  if (!text) return;
+
+  try {
+    const res = await fetch("/add", {
+      method: "PUT",
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ title: text, completed: false })
+    });
+
+    if (res.status === 429) return showToast("Rate limit exceeded!", true);
+    if (res.status === 403) return showToast("You are blocked!", true);
+    if (!res.ok) throw new Error();
+
+    const data = await res.json();
+    thoughts = data.todo; // Backend returns the updated list in .todo
+    inputField.value = "";
     render();
+    showToast("Post shared!");
+  } catch (e) {
+    showToast("Failed to share post", true);
+  }
+}
+
+function render() {
+  const list = document.getElementById("post-list");
+  if (thoughts.length === 0) {
+    list.innerHTML = `<p style="text-align:center; color:gray; font-size:14px; margin-top:20px;">No posts yet.</p>`;
+    return;
   }
 
-  /* ── Render ── */
-  function render() {
-    const list = document.getElementById('todo-list');
+  list.innerHTML = thoughts.map((t, i) => `
+    <div class="post-card">
+      <div class="post-header">
+        <div class="story-circle" style="width:24px; height:24px; padding:1.5px;">
+           <img src="https://api.dicebear.com/7.x/notionists/svg?seed=${i}">
+        </div>
+        <span class="username">anonymous_user_${i}</span>
+      </div>
+      <div class="post-body">
+        ${escapeHtml(t.title)}
+      </div>
+      <div class="post-actions">
+        <span class="action-icon">♡</span>
+        <span class="action-icon">💬</span>
+        <span class="action-icon">✈️</span>
+      </div>
+    </div>
+  `).reverse().join(""); // .reverse() so newest is on top
+}
 
-    const pending = todos.filter(t => !t.completed).length;
-    const done    = todos.filter(t =>  t.completed).length;
-    document.getElementById('pending-count').textContent = pending;
-    document.getElementById('done-count').textContent    = done;
+function escapeHtml(str) {
+  if(!str) return "";
+  return str.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
 
-    const visible = todos.filter(t =>
-      filter === 'all'    ? true :
-      filter === 'active' ? !t.completed :
-                             t.completed
-    );
+inputField.addEventListener("keydown", e => {
+  if (e.key === "Enter") addThought();
+});
 
-    if (visible.length === 0) {
-      const labels = { all: 'Nothing here yet', active: 'All caught up', done: 'Nothing completed' };
-      list.innerHTML = `<div class="empty">
-        <div class="empty-icon">∅</div>
-        <p>${labels[filter]}</p>
-      </div>`;
-      return;
-    }
-
-    list.innerHTML = visible.map((todo, i) => {
-      const realIndex = todos.indexOf(todo);
-      return `
-        <div class="todo-item ${todo.completed ? 'completed' : ''}" onclick="toggleTodo(${realIndex})">
-          <div class="check">
-            <svg class="check-icon" viewBox="0 0 10 10" fill="none">
-              <polyline points="1.5,5 4,7.5 8.5,2.5" stroke="white" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
-            </svg>
-          </div>
-          <span class="todo-text">${escapeHtml(todo.title)}</span>
-          <span class="todo-index">${String(realIndex + 1).padStart(2, '0')}</span>
-        </div>`;
-    }).join('');
-  }
-
-  /* ── Toast ── */
-  let toastTimer;
-  function showToast(msg, type = 'info') {
-    const el = document.getElementById('toast');
-    el.textContent = msg;
-    el.className = `toast ${type} show`;
-    clearTimeout(toastTimer);
-    toastTimer = setTimeout(() => el.classList.remove('show'), 2800);
-  }
-
-  function escapeHtml(str) {
-    return str.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
-  }
-
-  /* ── Keyboard shortcut ── */
-  document.getElementById('new-todo').addEventListener('keydown', e => {
-    if (e.key === 'Enter') addTodo();
-  });
-
-  /* ── Init ── */
-  fetchTodos();
+// Initial load
+fetchThoughts();
 </script>
+
 </body>
 </html>
