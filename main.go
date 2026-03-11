@@ -15,7 +15,7 @@ type Visitor struct {
 	lastSeen          time.Time
 	reputationScore   int
 	isBlocked         bool
-	blocketUntil      time.Time
+	blockUntil        time.Time
 	lastRateLimitTime time.Time
 }
 
@@ -58,7 +58,7 @@ func RateLimitMiddleware(limit rate.Limit, burst int) gin.HandlerFunc {
 			if visitor.reputationScore == 10 {
 				fmt.Printf("Blocking IP %s due to suspicious activity\n", ip)
 				visitor.isBlocked = true
-				visitor.blocketUntil = time.Now().Add(1 * time.Minute)
+				visitor.blockUntil = time.Now().Add(1 * time.Minute)
 			}
 			visitor.lastRateLimitTime = time.Now()
 			ctx.JSON(429, gin.H{"message": "Too many requests"})
@@ -88,16 +88,22 @@ func cleanupVisitors() {
 				// }
 
 				if visitor.isBlocked {
-					if time.Now().After(visitor.blocketUntil) {
+					if time.Now().After(visitor.blockUntil) {
+						mu.Lock()
 						visitor.isBlocked = false
-						visitor.reputationScore--
+						if visitor.reputationScore > 0 {
+							visitor.reputationScore--
+						}
+						mu.Unlock()
 					}
 				} else {
 					if time.Now().After(visitor.lastRateLimitTime.Add(10 * time.Minute)) {
 						fmt.Printf("Resetting reputation score for IP %s\n", ip)
+						mu.Lock()
 						if visitor.reputationScore > 0 {
 							visitor.reputationScore--
 						}
+						mu.Unlock()
 					}
 				}
 			}
