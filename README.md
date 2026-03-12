@@ -8,6 +8,7 @@
 ### ⏳ Planned
 - ☐ **Path-Based Rate Limiting**
 - ☐ **Bot Detection**
+  - ☑ **Missing user agent**
 - ☐ **Request Pattern Detection**
 - ☐ **Geo Blocking** (using MaxMind GeoIP database)
 - ☐ **Request Fingerprinting**
