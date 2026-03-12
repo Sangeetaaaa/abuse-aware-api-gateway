@@ -219,7 +219,7 @@ async function fetchThoughts() {
   try {
     const res = await fetch("/todos");
     if (res.status === 429) return showToast("Slow down! Too many requests.", true);
-    if (res.status === 403) return showToast("IP Blocked for 1 minute!", true);
+    if (res.status === 403) return showToast("Your are Blocked", true);
     if (!res.ok) throw new Error();
     
     thoughts = await res.json();

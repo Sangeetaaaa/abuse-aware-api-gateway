@@ -18,6 +18,7 @@ type Visitor struct {
 	isBlocked         bool
 	blockUntil        time.Time
 	lastRateLimitTime time.Time
+	notFoundCount     int
 }
 
 var visitors = make(map[string]*Visitor)
@@ -57,7 +58,19 @@ func RateLimitMiddleware(limit rate.Limit, burst int) gin.HandlerFunc {
 
 		ip := ctx.ClientIP()
 		visitor := getVisitor(ip)
-		suspciousUserAgents := []string{"curl", "wget", "bot", "spider", "crawler", "python-requests", "axios", "httpclient", "java", "go-http-client", "PostmanRuntime/7.39.1"}
+		suspciousUserAgents := []string{
+			"curl",
+			"wget",
+			"bot",
+			"spider",
+			"crawler",
+			"python-requests",
+			"axios",
+			"httpclient",
+			"java",
+			"go-http-client",
+			"PostmanRuntime/7.39.1",
+		}
 
 		if ctx.Request.UserAgent() == "" || isBot(ctx.Request.UserAgent(), suspciousUserAgents) {
 			fmt.Println(ctx.Request.UserAgent(), "user agency found")
@@ -86,7 +99,22 @@ func RateLimitMiddleware(limit rate.Limit, burst int) gin.HandlerFunc {
 			ctx.Abort()
 			return
 		}
+
 		ctx.Next()
+
+		status := ctx.Writer.Status()
+		if status == http.StatusNotFound {
+			visitor.notFoundCount++
+			if visitor.notFoundCount > 5 {
+				fmt.Printf("Blocking IP %s due to excessive 404 errors\n", ip)
+				visitor.isBlocked = true
+				visitor.blockUntil = time.Now().Add(1 * time.Minute)
+				visitor.reputationScore = visitor.reputationScore + 10
+				ctx.JSON(403, gin.H{"message": "Forbidden: Your IP has been blocked due to suspicious activity"})
+				ctx.Abort()
+				return
+			}
+		}
 	}
 }
 
