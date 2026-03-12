@@ -3,6 +3,7 @@ package main
 import (
 	"fmt"
 	"net/http"
+	"strings"
 	"sync"
 	"time"
 
@@ -40,12 +41,37 @@ func getVisitor(ip string) *Visitor {
 	return visitorStruct
 }
 
+func isBot(ua string, pattern []string) bool {
+	ua = strings.ToLower(ua)
+	for _, bot := range pattern {
+		if strings.Contains(ua, strings.ToLower(bot)) {
+			return true
+		}
+	}
+	return false
+}
+
 func RateLimitMiddleware(limit rate.Limit, burst int) gin.HandlerFunc {
 
 	return func(ctx *gin.Context) {
 
 		ip := ctx.ClientIP()
 		visitor := getVisitor(ip)
+		suspciousUserAgents := []string{"curl", "wget", "bot", "spider", "crawler", "python-requests", "axios", "httpclient", "java", "go-http-client", "PostmanRuntime/7.39.1"}
+
+		if ctx.Request.UserAgent() == "" || isBot(ctx.Request.UserAgent(), suspciousUserAgents) {
+			fmt.Println(ctx.Request.UserAgent(), "user agency found")
+			visitor.reputationScore = visitor.reputationScore + 3
+		}
+
+		if visitor.reputationScore > 10 && !visitor.isBlocked {
+			fmt.Printf("Blocking IP %s due to suspicious activity\n", ip)
+			visitor.isBlocked = true
+			visitor.blockUntil = time.Now().Add(1 * time.Minute)
+			ctx.JSON(403, gin.H{"message": "Forbidden: Your IP has been blocked due to suspicious activity"})
+			ctx.Abort()
+			return
+		}
 
 		if visitor.isBlocked {
 			ctx.JSON(403, gin.H{"message": "Forbidden: Your IP has been blocked due to suspicious activity"})
@@ -55,11 +81,6 @@ func RateLimitMiddleware(limit rate.Limit, burst int) gin.HandlerFunc {
 
 		if !visitor.limiter.Allow() {
 			visitor.reputationScore++
-			if visitor.reputationScore == 10 {
-				fmt.Printf("Blocking IP %s due to suspicious activity\n", ip)
-				visitor.isBlocked = true
-				visitor.blockUntil = time.Now().Add(1 * time.Minute)
-			}
 			visitor.lastRateLimitTime = time.Now()
 			ctx.JSON(429, gin.H{"message": "Too many requests"})
 			ctx.Abort()
