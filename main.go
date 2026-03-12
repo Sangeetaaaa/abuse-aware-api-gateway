@@ -113,6 +113,7 @@ func RateLimitMiddleware(limit rate.Limit, burst int) gin.HandlerFunc {
 				ctx.JSON(403, gin.H{"message": "Forbidden: Your IP has been blocked due to suspicious activity"})
 				ctx.Abort()
 				return
+				// ok
 			}
 		}
 	}
