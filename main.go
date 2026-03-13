@@ -3,11 +3,13 @@ package main
 import (
 	"fmt"
 	"net/http"
+	"net/netip"
 	"strings"
 	"sync"
 	"time"
 
 	"github.com/gin-gonic/gin"
+	"github.com/oschwald/geoip2-golang/v2"
 	"golang.org/x/time/rate"
 )
 
@@ -52,12 +54,25 @@ func isBot(ua string, pattern []string) bool {
 	return false
 }
 
+func getGeoLocation(ip string) *geoip2.Country {
+	db, _ := geoip2.Open("GeoLite2-Country.mmdb")
+	ipAddr, _ := netip.ParseAddr(ip)
+	record, err := db.Country(ipAddr)
+	fmt.Println(record, "FSdfa")
+	if err != nil {
+		fmt.Println(err)
+	}
+	return record
+}
+
 func RateLimitMiddleware(limit rate.Limit, burst int) gin.HandlerFunc {
 
 	return func(ctx *gin.Context) {
 
 		ip := ctx.ClientIP()
 		visitor := getVisitor(ip)
+		geoLocation := getGeoLocation(ip)
+		fmt.Printf("Visitor IP: %s, GeoLocation: %s\n", ip, geoLocation.Country.ISOCode)
 		suspciousUserAgents := []string{
 			"curl",
 			"wget",
@@ -119,10 +134,6 @@ func RateLimitMiddleware(limit rate.Limit, burst int) gin.HandlerFunc {
 	}
 }
 
-// loop through visitors map
-//     if now - lastSeen > 3 minutes
-//         delete visitor
-
 func cleanupVisitors() {
 	ticker := time.NewTicker(1 * time.Minute)
 
@@ -161,8 +172,6 @@ func cleanupVisitors() {
 		}
 	}()
 }
-
-// IP Reputation Service Integration
 
 func main() {
 

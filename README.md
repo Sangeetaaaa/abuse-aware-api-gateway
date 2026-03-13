@@ -18,6 +18,7 @@ Gin Middleware
       ├── Rate Limiting
       ├── Reputation Scoring
       ├── 404 Detection
+      └── GeoIP Check (only IN/US Traffic)
       │
       ▼
 Decision Engine
