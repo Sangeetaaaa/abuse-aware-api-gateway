@@ -14,13 +14,14 @@ import (
 )
 
 type Visitor struct {
-	limiter           *rate.Limiter
-	lastSeen          time.Time
-	reputationScore   int
-	isBlocked         bool
-	blockUntil        time.Time
-	lastRateLimitTime time.Time
-	notFoundCount     int
+	limiter            *rate.Limiter
+	lastSeen           time.Time
+	reputationScore    int
+	isBlocked          bool
+	isPermanentBlocked bool
+	blockUntil         time.Time
+	lastRateLimitTime  time.Time
+	notFoundCount      int
 }
 
 var visitors = make(map[string]*Visitor)
@@ -58,7 +59,6 @@ func getGeoLocation(ip string) *geoip2.Country {
 	db, _ := geoip2.Open("GeoLite2-Country.mmdb")
 	ipAddr, _ := netip.ParseAddr(ip)
 	record, err := db.Country(ipAddr)
-	fmt.Println(record, "FSdfa")
 	if err != nil {
 		fmt.Println(err)
 	}
@@ -72,7 +72,11 @@ func RateLimitMiddleware(limit rate.Limit, burst int) gin.HandlerFunc {
 		ip := ctx.ClientIP()
 		visitor := getVisitor(ip)
 		geoLocation := getGeoLocation(ip)
-		fmt.Printf("Visitor IP: %s, GeoLocation: %s\n", ip, geoLocation.Country.ISOCode)
+
+		if geoLocation.Country.ISOCode == "NL" {
+			visitor.isBlocked = true
+			visitor.isPermanentBlocked = true
+		}
 		suspciousUserAgents := []string{
 			"curl",
 			"wget",
@@ -88,7 +92,6 @@ func RateLimitMiddleware(limit rate.Limit, burst int) gin.HandlerFunc {
 		}
 
 		if ctx.Request.UserAgent() == "" || isBot(ctx.Request.UserAgent(), suspciousUserAgents) {
-			fmt.Println(ctx.Request.UserAgent(), "user agency found")
 			visitor.reputationScore = visitor.reputationScore + 3
 		}
 
@@ -97,6 +100,12 @@ func RateLimitMiddleware(limit rate.Limit, burst int) gin.HandlerFunc {
 			visitor.isBlocked = true
 			visitor.blockUntil = time.Now().Add(1 * time.Minute)
 			ctx.JSON(403, gin.H{"message": "Forbidden: Your IP has been blocked due to suspicious activity"})
+			ctx.Abort()
+			return
+		}
+
+		if visitor.isPermanentBlocked {
+			ctx.JSON(403, gin.H{"message": "Site is not available in your region"})
 			ctx.Abort()
 			return
 		}
@@ -148,23 +157,25 @@ func cleanupVisitors() {
 				// 	delete(visitors, ip)
 				// }
 
-				if visitor.isBlocked {
-					if time.Now().After(visitor.blockUntil) {
-						mu.Lock()
-						visitor.isBlocked = false
-						if visitor.reputationScore > 0 {
-							visitor.reputationScore--
+				if !visitor.isPermanentBlocked {
+					if visitor.isBlocked {
+						if time.Now().After(visitor.blockUntil) {
+							mu.Lock()
+							visitor.isBlocked = false
+							if visitor.reputationScore > 0 {
+								visitor.reputationScore--
+							}
+							mu.Unlock()
 						}
-						mu.Unlock()
-					}
-				} else {
-					if time.Now().After(visitor.lastRateLimitTime.Add(10 * time.Minute)) {
-						fmt.Printf("Resetting reputation score for IP %s\n", ip)
-						mu.Lock()
-						if visitor.reputationScore > 0 {
-							visitor.reputationScore--
+					} else {
+						if time.Now().After(visitor.lastRateLimitTime.Add(10 * time.Minute)) {
+							fmt.Printf("Resetting reputation score for IP %s\n", ip)
+							mu.Lock()
+							if visitor.reputationScore > 0 {
+								visitor.reputationScore--
+							}
+							mu.Unlock()
 						}
-						mu.Unlock()
 					}
 				}
 			}
