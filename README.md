@@ -19,3 +19,4 @@ The middleware tracks behavior per IP and blocks clients that exhibit suspicious
 - ☐ **Path-Based Rate Limiting**
 - ☐ **Request Pattern Detection**
 - ☐ **Request Fingerprinting**
+- ☐ **Dashboard**
