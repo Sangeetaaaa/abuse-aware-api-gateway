@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"os"
 	"strings"
 	"sync"
 	"time"
@@ -73,5 +74,11 @@ func main() {
 	router.GET("/todos", handlers.GetTodos)
 	router.PUT("/add", handlers.AddTodo)
 
-	router.Run(":3000")
+	port := os.Getenv("PORT")
+	if port == "" {
+		port = "3000"
+	}
+
+	fmt.Println("Server is running on port", port)
+	router.Run(":" + port)
 }
