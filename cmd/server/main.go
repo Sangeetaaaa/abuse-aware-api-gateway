@@ -68,6 +68,7 @@ func main() {
 	router.Use(middleware.RateLimitMiddleware(1, 5)) // Limit to 1 request per second with a burst of 5
 
 	router.StaticFile("/", "./index.html")
+	router.StaticFile("/dashboard", "./dashboard.html")
 
 	router.GET("/todos", handlers.GetTodos)
 	router.PUT("/add", handlers.AddTodo)
