@@ -3,6 +3,7 @@ package main
 import (
 	"fmt"
 	"os"
+	"todo-golang/internal/db"
 	"todo-golang/internal/geo"
 	"todo-golang/internal/handlers"
 	"todo-golang/internal/middleware"
@@ -12,6 +13,8 @@ import (
 )
 
 func main() {
+
+	db.InitDB()
 
 	err := geo.InitGeoDB()
 	if err != nil {
