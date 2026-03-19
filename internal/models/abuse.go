@@ -2,7 +2,7 @@ package models
 
 import "time"
 
-type Event struct {
+type AbuseEvent struct {
 	ID        string    `bson:"_id,omitempty"`
 	Timestamp time.Time `bson:"timestamp"`
 	IP        string    `bson:"ip"`

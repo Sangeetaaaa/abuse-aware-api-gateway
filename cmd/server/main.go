@@ -1,20 +1,33 @@
 package main
 
 import (
+	"context"
 	"fmt"
 	"os"
+	"time"
 	"todo-golang/internal/db"
 	"todo-golang/internal/geo"
 	"todo-golang/internal/handlers"
 	"todo-golang/internal/middleware"
 	"todo-golang/internal/visitor"
+	"todo-golang/internal/workers"
 
 	"github.com/gin-gonic/gin"
 )
 
 func main() {
 
-	db.InitDB()
+	database := db.InitDB()
+	defer func() {
+		ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+		defer cancel()
+
+		if err := database.Disconnect(ctx); err != nil {
+			fmt.Println("Error disconnecting from MongoDB:", err)
+		}
+	}()
+
+	workers.StartAbuseWorker(database.Database("todoapp"))
 
 	err := geo.InitGeoDB()
 	if err != nil {

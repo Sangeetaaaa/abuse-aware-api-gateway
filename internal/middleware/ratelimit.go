@@ -5,6 +5,8 @@ import (
 	"net/http"
 	"time"
 	"todo-golang/internal/geo"
+	"todo-golang/internal/models"
+	"todo-golang/internal/queue"
 	"todo-golang/internal/visitor"
 
 	"github.com/gin-gonic/gin"
@@ -65,6 +67,22 @@ func RateLimitMiddleware(limit rate.Limit, burst int) gin.HandlerFunc {
 		if !visitor.Limiter.Allow() {
 			visitor.ReputationScore++
 			visitor.LastRateLimitTime = time.Now()
+
+			event := models.AbuseEvent{
+				Timestamp: time.Now(),
+				IP:        ip,
+				Endpoint:  ctx.Request.RequestURI,
+				Action:    "rate_limited",
+				Country:   geoLocation.Country.ISOCode,
+				Score:     visitor.ReputationScore,
+			}
+
+			select {
+			case queue.AbuseChannel <- event:
+			default:
+				fmt.Printf("Abuse channel is full, dropping event: %+v\n", event)
+			}
+
 			ctx.JSON(429, gin.H{"message": "Too many requests"})
 			ctx.Abort()
 			return

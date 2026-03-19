@@ -2,7 +2,6 @@ package db
 
 import (
 	"context"
-	"fmt"
 	"log"
 	"os"
 
@@ -10,8 +9,7 @@ import (
 	"go.mongodb.org/mongo-driver/mongo/options"
 )
 
-func InitDB() {
-	// Placeholder for any future database initialization logic
+func InitDB() *mongo.Client {
 
 	uri := os.Getenv("MONGODB_URI")
 	docs := "www.mongodb.com/docs/drivers/go/current/"
@@ -26,8 +24,6 @@ func InitDB() {
 	if err != nil {
 		log.Fatal("Error connecting to MongoDB:", err)
 	}
-	defer client.Disconnect(nil)
 
-	fmt.Println("Database successfully connected")
-
+	return client
 }
