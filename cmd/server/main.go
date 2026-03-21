@@ -27,7 +27,7 @@ func main() {
 		}
 	}()
 
-	workers.StartAbuseWorker(database.Database("todoapp"))
+	workers.StartEventWorker(database.Database("logs"))
 
 	err := geo.InitGeoDB()
 	if err != nil {

@@ -1,7 +1,7 @@
 package middleware
 
 import (
-	"fmt"
+	"log"
 	"net/http"
 	"time"
 	"todo-golang/internal/geo"
@@ -44,21 +44,51 @@ func RateLimitMiddleware(limit rate.Limit, burst int) gin.HandlerFunc {
 		}
 
 		if visitor.ReputationScore > 10 && !visitor.IsBlocked {
-			fmt.Printf("Blocking IP %s due to suspicious activity\n", ip)
+			enqueueEvent(models.Event{
+				Timestamp: time.Now(),
+				IP:        ip,
+				Endpoint:  ctx.Request.RequestURI,
+				Country:   geoLocation.Country.ISOCode,
+				Action:    "blocked",
+				Score:     visitor.ReputationScore,
+			})
+
+			log.Printf("Blocking IP %s due to suspicious activity\n", ip)
 			visitor.IsBlocked = true
 			visitor.BlockUntil = time.Now().Add(1 * time.Minute)
+
 			ctx.JSON(403, gin.H{"message": "Forbidden: Your IP has been blocked due to suspicious activity"})
 			ctx.Abort()
 			return
 		}
 
 		if visitor.IsPermanentBlocked {
+
+			enqueueEvent(models.Event{
+				Timestamp: time.Now(),
+				IP:        ip,
+				Endpoint:  ctx.Request.RequestURI,
+				Country:   geoLocation.Country.ISOCode,
+				Action:    "blocked",
+				Score:     visitor.ReputationScore,
+			})
+
 			ctx.JSON(403, gin.H{"message": "Site is not available in your region"})
 			ctx.Abort()
 			return
 		}
 
 		if visitor.IsBlocked {
+
+			enqueueEvent(models.Event{
+				Timestamp: time.Now(),
+				IP:        ip,
+				Endpoint:  ctx.Request.RequestURI,
+				Country:   geoLocation.Country.ISOCode,
+				Action:    "blocked",
+				Score:     visitor.ReputationScore,
+			})
+
 			ctx.JSON(403, gin.H{"message": "Forbidden: Your IP has been blocked due to suspicious activity"})
 			ctx.Abort()
 			return
@@ -68,20 +98,14 @@ func RateLimitMiddleware(limit rate.Limit, burst int) gin.HandlerFunc {
 			visitor.ReputationScore++
 			visitor.LastRateLimitTime = time.Now()
 
-			event := models.AbuseEvent{
+			enqueueEvent(models.Event{
 				Timestamp: time.Now(),
 				IP:        ip,
 				Endpoint:  ctx.Request.RequestURI,
-				Action:    "rate_limited",
 				Country:   geoLocation.Country.ISOCode,
+				Action:    "rate_limited",
 				Score:     visitor.ReputationScore,
-			}
-
-			select {
-			case queue.AbuseChannel <- event:
-			default:
-				fmt.Printf("Abuse channel is full, dropping event: %+v\n", event)
-			}
+			})
 
 			ctx.JSON(429, gin.H{"message": "Too many requests"})
 			ctx.Abort()
@@ -94,15 +118,39 @@ func RateLimitMiddleware(limit rate.Limit, burst int) gin.HandlerFunc {
 		if status == http.StatusNotFound {
 			visitor.NotFoundCount++
 			if visitor.NotFoundCount > 5 {
-				fmt.Printf("Blocking IP %s due to excessive 404 errors\n", ip)
+				log.Printf("Blocking IP %s due to excessive 404 errors\n", ip)
 				visitor.IsBlocked = true
 				visitor.BlockUntil = time.Now().Add(1 * time.Minute)
 				visitor.ReputationScore = visitor.ReputationScore + 10
-				ctx.JSON(403, gin.H{"message": "Forbidden: Your IP has been blocked due to suspicious activity"})
-				ctx.Abort()
+
+				enqueueEvent(models.Event{
+					Timestamp: time.Now(),
+					IP:        ip,
+					Endpoint:  ctx.Request.RequestURI,
+					Country:   geoLocation.Country.ISOCode,
+					Action:    "blocked",
+					Score:     visitor.ReputationScore,
+				})
 				return
 				// ok
 			}
 		}
+
+		enqueueEvent(models.Event{
+			Timestamp: time.Now(),
+			IP:        ip,
+			Endpoint:  ctx.Request.RequestURI,
+			Country:   geoLocation.Country.ISOCode,
+			Action:    "allowed",
+			Score:     visitor.ReputationScore,
+		})
+	}
+}
+
+func enqueueEvent(event models.Event) {
+	select {
+	case queue.EventChannel <- event:
+	default:
+		log.Printf("Abuse channel is full, dropping event: %+v\n", event)
 	}
 }
