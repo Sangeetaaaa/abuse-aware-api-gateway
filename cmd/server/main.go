@@ -9,6 +9,7 @@ import (
 	"todo-golang/internal/geo"
 	"todo-golang/internal/handlers"
 	"todo-golang/internal/middleware"
+	"todo-golang/internal/routes"
 	"todo-golang/internal/visitor"
 	"todo-golang/internal/workers"
 
@@ -18,16 +19,18 @@ import (
 func main() {
 
 	database := db.InitDB()
-	defer func() {
-		ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
-		defer cancel()
+	if database != nil {
+		defer func() {
+			ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+			defer cancel()
 
-		if err := database.Disconnect(ctx); err != nil {
-			fmt.Println("Error disconnecting from MongoDB:", err)
-		}
-	}()
+			if err := database.Disconnect(ctx); err != nil {
+				fmt.Println("Error disconnecting from MongoDB:", err)
+			}
+		}()
 
-	workers.StartEventWorker(database.Database("logs"))
+		workers.StartEventWorker(database.Database("logs"))
+	}
 
 	err := geo.InitGeoDB()
 	if err != nil {
@@ -43,6 +46,7 @@ func main() {
 
 	router.GET("/todos", handlers.GetTodos)
 	router.PUT("/add", handlers.AddTodo)
+	routes.SetupRouter(router)
 
 	port := os.Getenv("PORT")
 	if port == "" {

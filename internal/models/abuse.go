@@ -7,6 +7,7 @@ type Event struct {
 	Timestamp time.Time `bson:"timestamp"`
 	IP        string    `bson:"ip"`
 	Endpoint  string    `bson:"endpoint"`
+	Method    string    `bson:"method"`
 	Action    string    `bson:"action"` // request, blocked, rate_limited
 	Country   string    `bson:"country"`
 	Score     int       `bson:"score"`

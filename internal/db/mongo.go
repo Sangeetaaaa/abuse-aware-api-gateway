@@ -12,17 +12,15 @@ import (
 func InitDB() *mongo.Client {
 
 	uri := os.Getenv("MONGODB_URI")
-	docs := "www.mongodb.com/docs/drivers/go/current/"
 	if uri == "" {
-		log.Fatal("Set your 'MONGODB_URI' environment variable. " +
-			"See: " + docs +
-			"usage-examples/#environment-variable")
+		log.Println("MONGODB_URI is not set, analytics persistence is disabled")
+		return nil
 	}
 
-	// MongoDB operations are network calls, and Go wants you to always control them safely.
 	client, err := mongo.Connect(context.TODO(), options.Client().ApplyURI(uri))
 	if err != nil {
-		log.Fatal("Error connecting to MongoDB:", err)
+		log.Printf("Error connecting to MongoDB, analytics persistence is disabled: %v\n", err)
+		return nil
 	}
 
 	return client
