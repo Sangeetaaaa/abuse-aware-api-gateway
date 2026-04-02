@@ -49,29 +49,20 @@ func CleanupVisitors() {
 			mu.Lock()
 			fmt.Println("Cleaning up expired visitors list")
 			for ip, visitor := range visitors {
-				// if time.Now().After(visitor.lastSeen.Add(3 * time.Minute)) {
-				// 	fmt.Println("Deleting expired visitor:", ip)
-				// 	delete(visitors, ip)
-				// }
-
 				if !visitor.IsPermanentBlocked {
 					if visitor.IsBlocked {
 						if time.Now().After(visitor.BlockUntil) {
-							mu.Lock()
 							visitor.IsBlocked = false
 							if visitor.ReputationScore > 0 {
 								visitor.ReputationScore--
 							}
-							mu.Unlock()
 						}
 					} else {
 						if time.Now().After(visitor.LastRateLimitTime.Add(10 * time.Minute)) {
 							fmt.Printf("Resetting reputation score for IP %s\n", ip)
-							mu.Lock()
 							if visitor.ReputationScore > 0 {
 								visitor.ReputationScore--
 							}
-							mu.Unlock()
 						}
 					}
 				}

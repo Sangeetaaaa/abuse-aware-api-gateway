@@ -2,11 +2,14 @@ package middleware
 
 import (
 	"log"
+	"net"
 	"net/http"
 	"time"
 	"todo-golang/internal/geo"
 	"todo-golang/internal/models"
 	"todo-golang/internal/queue"
+	repo "todo-golang/internal/repositories"
+	"todo-golang/internal/utils"
 	"todo-golang/internal/visitor"
 
 	"github.com/gin-gonic/gin"
@@ -18,10 +21,11 @@ func RateLimitMiddleware(limit rate.Limit, burst int) gin.HandlerFunc {
 	return func(ctx *gin.Context) {
 
 		ip := ctx.ClientIP()
+		isLocalClient := isLocalIP(ip)
 		visitor := visitor.GetVisitor(ip)
 		geoLocation := geo.GetGeoLocation(ip)
 
-		if geoLocation.Country.ISOCode == "NL" {
+		if !isLocalClient && geoLocation.Country.ISOCode == "NL" {
 			visitor.IsBlocked = true
 			visitor.IsPermanentBlocked = true
 		}
@@ -39,7 +43,7 @@ func RateLimitMiddleware(limit rate.Limit, burst int) gin.HandlerFunc {
 			"PostmanRuntime/7.39.1",
 		}
 
-		if ctx.Request.UserAgent() == "" || isBot(ctx.Request.UserAgent(), suspciousUserAgents) {
+		if !isLocalClient && (ctx.Request.UserAgent() == "" || isBot(ctx.Request.UserAgent(), suspciousUserAgents)) {
 			visitor.ReputationScore = visitor.ReputationScore + 3
 		}
 
@@ -48,8 +52,9 @@ func RateLimitMiddleware(limit rate.Limit, burst int) gin.HandlerFunc {
 				Timestamp: time.Now(),
 				IP:        ip,
 				Endpoint:  ctx.Request.RequestURI,
+				Method:    ctx.Request.Method,
 				Country:   geoLocation.Country.ISOCode,
-				Action:    "blocked",
+				Action:    utils.ActionBlocked,
 				Score:     visitor.ReputationScore,
 			})
 
@@ -68,8 +73,9 @@ func RateLimitMiddleware(limit rate.Limit, burst int) gin.HandlerFunc {
 				Timestamp: time.Now(),
 				IP:        ip,
 				Endpoint:  ctx.Request.RequestURI,
+				Method:    ctx.Request.Method,
 				Country:   geoLocation.Country.ISOCode,
-				Action:    "blocked",
+				Action:    utils.ActionBlocked,
 				Score:     visitor.ReputationScore,
 			})
 
@@ -84,8 +90,9 @@ func RateLimitMiddleware(limit rate.Limit, burst int) gin.HandlerFunc {
 				Timestamp: time.Now(),
 				IP:        ip,
 				Endpoint:  ctx.Request.RequestURI,
+				Method:    ctx.Request.Method,
 				Country:   geoLocation.Country.ISOCode,
-				Action:    "blocked",
+				Action:    utils.ActionBlocked,
 				Score:     visitor.ReputationScore,
 			})
 
@@ -102,8 +109,9 @@ func RateLimitMiddleware(limit rate.Limit, burst int) gin.HandlerFunc {
 				Timestamp: time.Now(),
 				IP:        ip,
 				Endpoint:  ctx.Request.RequestURI,
+				Method:    ctx.Request.Method,
 				Country:   geoLocation.Country.ISOCode,
-				Action:    "rate_limited",
+				Action:    utils.ActionRateLimited,
 				Score:     visitor.ReputationScore,
 			})
 
@@ -127,8 +135,9 @@ func RateLimitMiddleware(limit rate.Limit, burst int) gin.HandlerFunc {
 					Timestamp: time.Now(),
 					IP:        ip,
 					Endpoint:  ctx.Request.RequestURI,
+					Method:    ctx.Request.Method,
 					Country:   geoLocation.Country.ISOCode,
-					Action:    "blocked",
+					Action:    utils.ActionBlocked,
 					Score:     visitor.ReputationScore,
 				})
 				return
@@ -140,17 +149,29 @@ func RateLimitMiddleware(limit rate.Limit, burst int) gin.HandlerFunc {
 			Timestamp: time.Now(),
 			IP:        ip,
 			Endpoint:  ctx.Request.RequestURI,
+			Method:    ctx.Request.Method,
 			Country:   geoLocation.Country.ISOCode,
-			Action:    "allowed",
+			Action:    utils.ActionAllowed,
 			Score:     visitor.ReputationScore,
 		})
 	}
 }
 
 func enqueueEvent(event models.Event) {
+	repo.StoreEvent(event)
+
 	select {
 	case queue.EventChannel <- event:
 	default:
 		log.Printf("Abuse channel is full, dropping event: %+v\n", event)
 	}
+}
+
+func isLocalIP(ip string) bool {
+	parsedIP := net.ParseIP(ip)
+	if parsedIP == nil {
+		return false
+	}
+
+	return parsedIP.IsLoopback() || parsedIP.IsPrivate()
 }

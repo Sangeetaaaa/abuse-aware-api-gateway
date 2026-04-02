@@ -10,12 +10,14 @@ import (
 )
 
 func StartEventWorker(db *mongo.Database) {
-	// This worker will process log events from the LogChannel
+	if db == nil {
+		return
+	}
+
 	go func() {
 		collection := db.Collection("events")
 
 		for event := range queue.EventChannel {
-			// Here you would typically save the event to a database or log it
 			fmt.Printf("Inserting to the database")
 
 			ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)

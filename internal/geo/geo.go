@@ -10,10 +10,15 @@ import (
 var db *geoip2.Reader
 
 func GetGeoLocation(ip string) *geoip2.Country {
+	if db == nil {
+		return &geoip2.Country{}
+	}
+
 	ipAddr, _ := netip.ParseAddr(ip)
 	record, err := db.Country(ipAddr)
 	if err != nil {
 		fmt.Println(err)
+		return &geoip2.Country{}
 	}
 	return record
 }
